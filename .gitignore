@@ -1,2 +1,4 @@
 # Ignore the virtual environment folder
 tradingView_venv/
+test.ipynb
+taba/__pycache__/
