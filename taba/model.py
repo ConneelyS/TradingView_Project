@@ -2,14 +2,28 @@ from taba.utils import denormalize, normalize
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-import keras.optimizers as optimizers
-from tensorflow.keras import models
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Input, Dropout, Activation, Flatten
+import keras.optimizers as optimizers  # type: ignore
+from tensorflow.keras import models  # type: ignore
+from tensorflow.keras.models import Sequential  # type: ignore
+from tensorflow.keras.layers import LSTM, Dense, Input, Dropout, Activation, Flatten  # type: ignore
 
 
 class LSTMModel:
-    def __init__(self, data, n_past, n_future):
+    def __init__(
+        self,
+        data,
+        n_past=24,
+        n_future=6,
+        batch_size=32,
+        epochs=20,
+        learning_rate=0.0001,
+        hidden_units=96,
+        train_split=0.7,
+        activation="relu",
+    ):
+        """
+        Initialize the LSTM model with the given parameters.
+        """
         self.data = data  # Pandas DataFrame containing the data
         self.n_past = n_past
         self.n_future = n_future
@@ -17,11 +31,12 @@ class LSTMModel:
         self.model = None
         self.model_history = None
         # RNN Hyperparameters
-        self.BATCH_SIZE = 32
-        self.EPOCHS = 20
-        self.LEARNING_RATE = 0.0001
-        self.HIDDEN_UNITS = 96  # Number of LSTM units in the hidden layer
-        self.TRAIN_SPLIT = 0.7  # Fraction of data to use for training
+        self.BATCH_SIZE = batch_size
+        self.EPOCHS = epochs
+        self.LEARNING_RATE = learning_rate
+        self.HIDDEN_UNITS = hidden_units  # Number of LSTM units in the hidden layer
+        self.TRAIN_SPLIT = train_split  # Fraction of data to use for training
+        self.activation = activation  # Activation function for the output layer
 
     def initialize_vectors(self):
         """
@@ -31,7 +46,7 @@ class LSTMModel:
         """
         # Normalize the data
         scaled_data, self.scaler = normalize(
-            self.data.drop(["datetime", "symbol"], axis=1, inplace=False),
+            self.data.drop(["datetime"], axis=1, inplace=False),
             column_wise=True,
         )
         # scaled_data = np.array(self.data.drop(['datetime'], axis=1, inplace=False), dtype=np.float32)
@@ -82,10 +97,7 @@ class LSTMModel:
         self.model.add(Input(shape=(self.X_train.shape[1], self.X_train.shape[2])))
         self.model.add(LSTM(self.HIDDEN_UNITS, return_sequences=True))
         self.model.add(LSTM(int(self.HIDDEN_UNITS / 2), return_sequences=False))
-        # self.model.add(Dense(int(HIDDEN_UNITS/4), activation='relu'))
-        # self.model.add(Dropout(0.2))
-        # self.model.add(Dense(int(HIDDEN_UNITS/8), activation='relu'))
-        self.model.add(Dense(1, activation="sigmoid"))
+        self.model.add(Dense(1, activation=self.activation))
 
         # Compile the model
         self.model.compile(
@@ -100,7 +112,7 @@ class LSTMModel:
             self.y_train,
             epochs=self.EPOCHS,
             batch_size=self.BATCH_SIZE,
-            verbose=1,
+            verbose=0,
         )
         return self.model, self.model_history
 
@@ -110,18 +122,18 @@ class LSTMModel:
         The evaluation metrics and the predictions are returned.
         """
         # Evaluate the model
-        loss_metrics = self.model.evaluate(self.X_test, self.y_test, verbose=1)
+        loss_metrics = self.model.evaluate(self.X_test, self.y_test, verbose=0)
         if print_metrics:
-            print(
-                f"Train Loss: {self.model.evaluate(self.X_train, self.y_train, verbose=0)}"
-            )
+            # print(
+            #    f"Train Loss: {self.model.evaluate(self.X_train, self.y_train, verbose=0)}"
+            # )
             print(
                 f"Test Loss: {loss_metrics[0]}, Test MAE: {loss_metrics[1]}, Test MAPE: {loss_metrics[2]}, Test R2 Score: {loss_metrics[3]}"
             )
 
         # Make predictions
-        test_pred = self.model.predict(self.X_test)
-        train_pred = self.model.predict(self.X_train)
+        test_pred = self.model.predict(self.X_test, verbose=0)
+        train_pred = self.model.predict(self.X_train, verbose=0)
         test_pred = denormalize(test_pred, self.scaler[3][0], self.scaler[3][1])
         train_pred = denormalize(train_pred, self.scaler[3][0], self.scaler[3][1])
 
@@ -134,7 +146,7 @@ class LSTMModel:
         """
         # Normalize the data
         scaled_data, self.scaler = normalize(
-            data.drop(["datetime", "symbol"], axis=1, inplace=False), column_wise=True
+            data.drop(["datetime"], axis=1, inplace=False), column_wise=True
         )
 
         # Create sequences for prediction
