@@ -2,4 +2,5 @@
 tradingView_venv/
 test.ipynb
 taba/__pycache__/
-models/*
+models/*"venv/" 
+venv/
