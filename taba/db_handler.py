@@ -11,7 +11,7 @@ class DBHandler:
         """
         Create empty additional tables in the database if they do not exist
         """
-        self.cursor.execute(
+        self.cursor.execute(  # Table for storing models, parameters, and MSE values
             """
             CREATE TABLE IF NOT EXISTS MODELS (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,9 +33,18 @@ class DBHandler:
         data.to_sql(table, self.connection, if_exists="replace", index=False)
         self.connection.commit()
 
-    def get_data(self, ticker):
+    def save_df_to_db(self, df, table_name):
+        """
+        Save a DataFrame to the database
+        """
+        print(f"Saving DataFrame to table {table_name}...")
+        df.to_sql(table_name, self.connection, if_exists="replace", index=False)
+        self.connection.commit()
+
+    def get_data(self, table_name):
         try:
-            self.cursor.execute(f"SELECT * FROM {ticker.upper()}_HIST")
+            print(f"Fetching data from table {table_name}...")
+            self.cursor.execute(f"SELECT * FROM {table_name}")
             return self.cursor.fetchall()
         except sqlite3.Error as e:
             print(f"An error occurred: {e}")

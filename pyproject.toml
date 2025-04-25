@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "TradingView_Project"
+version = "0.1.0"
+authors = [
+    { name="Lukas Torquato", email="x24163503@student.ncirl.ie" },
+    { name="Sam Conneely", email="x24157651@student.ncirl.ie" },
+    { name="Bugra Kavdir", email="x24159972@student.ncirl.ie" },
+    { name="Alex Power", email="x24100421@student.ncirl.ie" }
+]
+description = "Intaking SP500 data from TradingView and using it to train a neural network to predict future prices."
+readme = "README.md"
+requires-python = ">=3.11"
+classifiers = [
+        "Programming Language :: Python :: 3",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+]
+
+dependencies = [
+    "numpy>=2.2.5",
+    "pandas>=2.2.3",
+    "tqdm",
+    "tensorflow>=2.19.0",
+    "keras>=3.9.1",
+    "matplotlib>=3.9.2",
+    "scikit-learn>=1.2.0",
+    "websocket-client>=1.5.1",
+    "requests>=2.28.1",
+    "seaborn>=0.12.2",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/ConneelyS/TradingView_Project"
+
+[tool.black]
+line-length = 88
+[tool.isort]
+profile = "black"

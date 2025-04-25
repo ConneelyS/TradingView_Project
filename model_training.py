@@ -13,7 +13,7 @@ def preprocess(db):
     """
 
     for name in [TICKER, "US10", "GOLD"]:
-        data = db.get_data(name)
+        data = db.get_data(name + "_HIST")
         df_temp = pd.DataFrame(
             data,
             columns=["datetime", "symbol", "open", "high", "low", "close", "volume"],
@@ -55,6 +55,9 @@ def preprocess(db):
     df.drop(columns=["date"], inplace=True)
     # Drop rows that were added on the merge (outer join)
     df.dropna(inplace=True)
+
+    # Save the processed data to the database
+    db.save_df_to_db(df, "PROCESSED_DATA")
 
     return df
 
@@ -118,7 +121,7 @@ def main():
 
     try:
         # Check if the database is empty and load data if necessary
-        if not db_handler.get_data("FED"):
+        if not db_handler.get_data("SP500_HIST"):
             print("Database is empty. Loading data from CSV files...")
             # Load data from CSV to database
             for file in os.listdir(DATA_FOLDER):
@@ -130,6 +133,9 @@ def main():
         return
 
     data = preprocess(db_handler)
+    if PREPROCESS_ONLY:
+        print("Preprocessing completed. Exiting...")
+        return
 
     # single model training
     if MODE == "manual":
@@ -137,10 +143,10 @@ def main():
         lstm_model.initialize_vectors()
         lstm_model.model_training()
         eval = lstm_model.model_evaluation()
-        lstm_model.save_model("models/test.keras")
+        lstm_model.save_model("models/best_model.keras")
 
         db_handler.save_model(
-            "test.keras",
+            "best_model.keras",
             TIME_STEPS,
             TIME_IN_FUTURE,
             eval[2][0],

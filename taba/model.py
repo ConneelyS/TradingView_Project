@@ -1,7 +1,6 @@
 from taba.utils import denormalize, normalize
 import numpy as np
 import pandas as pd
-from tqdm import tqdm
 import keras.optimizers as optimizers  # type: ignore
 from tensorflow.keras import models  # type: ignore
 from tensorflow.keras.models import Sequential  # type: ignore
@@ -14,10 +13,10 @@ class LSTMModel:
         data,
         n_past=24,
         n_future=6,
-        batch_size=32,
+        batch_size=16,
         epochs=20,
-        learning_rate=0.0001,
-        hidden_units=96,
+        learning_rate=0.001,
+        hidden_units=128,
         train_split=0.7,
         activation="relu",
     ):
@@ -25,8 +24,10 @@ class LSTMModel:
         Initialize the LSTM model with the given parameters.
         """
         self.data = data  # Pandas DataFrame containing the data
-        self.n_past = n_past
-        self.n_future = n_future
+        self.n_past = (
+            n_past  # Number of past time steps to consider for each prediction
+        )
+        self.n_future = n_future  # Number of time steps ahead in the future to predict
         self.scaler = None
         self.model = None
         self.model_history = None
@@ -112,7 +113,8 @@ class LSTMModel:
             self.y_train,
             epochs=self.EPOCHS,
             batch_size=self.BATCH_SIZE,
-            verbose=0,
+            validation_split=0.1,
+            verbose=1,
         )
         return self.model, self.model_history
 
@@ -144,9 +146,10 @@ class LSTMModel:
         Predict the future values using the trained model.
         The predictions are returned as a Numpy array.
         """
+        self.data = data
         # Normalize the data
         scaled_data, self.scaler = normalize(
-            data.drop(["datetime"], axis=1, inplace=False), column_wise=True
+            data.drop([0], axis=1, inplace=False), column_wise=True
         )
 
         # Create sequences for prediction
