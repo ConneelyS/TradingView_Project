@@ -4,3 +4,4 @@ test.ipynb
 taba/__pycache__/
 models/*"venv/" 
 venv/
+taba/errors.csv

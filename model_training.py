@@ -33,7 +33,7 @@ def preprocess(db):
             )
         )
 
-    fed = db.get_data("FED")
+    fed = db.get_data("FED_HIST")
     fed_df = pd.DataFrame(fed, columns=["date", "rate"])
 
     df["datetime"] = pd.to_datetime(df["datetime"])
@@ -48,9 +48,9 @@ def preprocess(db):
         how="outer",
         suffixes=(None, "_fed"),
     )
+
     # interpolate the fed rate if closest available rate before (since the fed rate is updated monthly)
     df["rate"] = df["rate"].interpolate(method="pad")
-
     # Drop the date column as it is no longer needed
     df.drop(columns=["date"], inplace=True)
     # Drop rows that were added on the merge (outer join)
@@ -133,20 +133,20 @@ def main():
         return
 
     data = preprocess(db_handler)
+
     if PREPROCESS_ONLY:
         print("Preprocessing completed. Exiting...")
         return
 
     # single model training
     if MODE == "manual":
-        lstm_model = LSTMModel(data, TIME_STEPS, TIME_IN_FUTURE)
+        lstm_model = LSTMModel(data.copy(), TIME_STEPS, TIME_IN_FUTURE, epochs=15)
         lstm_model.initialize_vectors()
         lstm_model.model_training()
         eval = lstm_model.model_evaluation()
-        lstm_model.save_model("models/best_model.keras")
-
+        lstm_model.save_model(f"models/model_{TIME_IN_FUTURE}h.keras")
         db_handler.save_model(
-            "best_model.keras",
+            f"model_{TIME_IN_FUTURE}h.keras",
             TIME_STEPS,
             TIME_IN_FUTURE,
             eval[2][0],
